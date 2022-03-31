@@ -1,43 +1,63 @@
-package com.mfbi;
 
-import org.springframework.core.io.ClassPathResource;
+        import org.json.simple.JSONArray;
+        import org.json.simple.parser.JSONParser;
+        import org.nd4j.common.io.ClassPathResource;
 
-import java.io.*;
-import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+        import java.io.*;
+        import java.util.*;
 
-public class TweetCleanup {
+public class JsonToFile2 {
 
     public static void main(String[] args) {
-        BufferedReader objReader = null;
+        JSONParser parser = new JSONParser();
         try {
-            String strCurrentLine;
+            Object obj = parser.parse(new FileReader("D:\\code2\\JsonToFile\\src\\main\\resources\\strong-negatives.json"));
 
-            objReader = new BufferedReader(new FileReader("D:/datasets/malay-dataset/sentiment/supervised-twitter/text.csv"));
+            // A JSON object. Key value pairs are unordered. JSONObject supports java.util.Map interface.
+//            JSONObject jsonObject = (JSONObject) obj;
+//
+//            // A JSON array. JSONObject supports java.util.List interface.
+//            JSONArray companyList = (JSONArray) jsonObject.get("Company List");
 
-            while ((strCurrentLine = objReader.readLine()) != null) {
-                System.out.println(cleanStrings(strCurrentLine.toLowerCase()));
+            JSONArray array = new JSONArray();
+            array.add(obj);
+
+            String str = array.toString();
+
+            String newStr = "";
+            int i = 1, strPos = 0;
+            boolean result;
+//            System.out.println(str);
+            while (str != "") {
+                strPos = str.indexOf("\",\"", 2);
+                newStr = str.substring(3, strPos);
+                str = str.substring(strPos, str.length());
+                newStr = cleanStrings(newStr);
+                List<String> newStrList = new ArrayList<String>(Arrays.asList(newStr.split(" ")));
+                int newStrSize = newStrList.size();
+//                System.out.println(i);
+
+                if (i > 21092){
+                    if (newStr != "" && newStrSize > 5) {
+                        File file = new File("D:\\code2\\JsonToFile\\src\\main\\resources\\tweets-labeled\\negative\\" + i + ".txt");
+                        file.createNewFile();
+                        FileWriter fileWriter = new FileWriter(file);
+                        fileWriter.write(newStr);
+                        fileWriter.flush();
+                        fileWriter.close();
+                        i++;
+                        System.out.println(i + ": " + newStr);
+                    }
+                }  else {
+                    i++;
+                }
             }
-
-        } catch (IOException e) {
-
+        } catch (Exception e) {
             e.printStackTrace();
-
-        } finally {
-
-            try {
-                if (objReader != null)
-                    objReader.close();
-            } catch (IOException ex) {
-                ex.printStackTrace();
-            }
         }
     }
-
-
     public static String cleanStrings(String str) throws IOException {
-        String result = str, rmvStr = "http", str2, str3;
+        String result = str.toLowerCase(Locale.ROOT), rmvStr = "http", str2, str3;
         int strIndex, strIndex2;
 
         if (result.contains(rmvStr)){
@@ -68,7 +88,7 @@ public class TweetCleanup {
                 if (result.charAt(i-1) == ' ')
                     result = result.substring(0, i-1);
                 else
-                result = result.substring(0, i);
+                    result = result.substring(0, i);
             }
         }
 
@@ -79,7 +99,7 @@ public class TweetCleanup {
             if (strIndex2 == -1)
                 str3 = result.substring(strIndex+rmvStr.length(), result.length());
             else
-            str3 = result.substring(strIndex2+1, result.length());
+                str3 = result.substring(strIndex2+1, result.length());
             result = str2.concat(str3);
         }
 
@@ -90,7 +110,7 @@ public class TweetCleanup {
                 if (result.charAt(i-1) == ' ')
                     result = result.substring(0, i - 1);
                 else
-                result = result.substring(0, i);
+                    result = result.substring(0, i);
             }
         }
 
@@ -101,10 +121,11 @@ public class TweetCleanup {
             if (strIndex2 == -1)
                 str3 = result.substring(strIndex+rmvStr.length(), result.length());
             else
-            str3 = result.substring(strIndex2+1, result.length());
+                str3 = result.substring(strIndex2+1, result.length());
             result = str2.concat(str3);
         }
 
+        result = result.replaceAll("\\r\\n|\\r|\\n", "");
         result = result.replaceAll("\\d", "");
         result = result.replaceAll("[^a-zA-Z0-9\\s]", "");
         result = result.replaceAll("(\\s+[a-z](?=\\s))","");
@@ -114,51 +135,17 @@ public class TweetCleanup {
         FileReader fr=new FileReader(file);   //reads the file
         BufferedReader br=new BufferedReader(fr);  //creates a buffering character input stream
         List<String> rmvStrList = new ArrayList<>();
-            List<String> myList = new ArrayList<String>(Arrays.asList(result.split(" ")));
+        List<String> myList = new ArrayList<String>(Arrays.asList(result.split(" ")));
         while ((rmvStr = br.readLine()) != null) {
             rmvStrList.add(rmvStr);
             rmvStr = br.readLine();
             myList.remove(rmvStr);
         }
-            myList.removeAll(rmvStrList);
+        myList.removeAll(rmvStrList);
 
         result = String.join(" ", myList);
 
 
-//        while((rmvStr=br.readLine())!=null)
-//        {
-//            int i = 0;
-//            String temp = result;
-//            while (temp.contains(rmvStr)){
-//                strIndex = result.indexOf(rmvStr, i);
-//                strIndex2 = result.indexOf(" ", strIndex);
-//                System.out.println(temp);
-//                System.out.println(rmvStr);
-//                System.out.println(strIndex);
-//                System.out.println(strIndex+rmvStr.length());
-//                if(strIndex != 0){
-//                    if((strIndex + rmvStr.length()) != result.length()){
-//                        if (result.charAt(strIndex - 1) == ' ' && result.charAt(strIndex + rmvStr.length()) == ' ') {
-//                            str2 = result.substring(0, strIndex);
-//                            str3 = result.substring(strIndex2, result.length());
-//                            result = str2.concat(str3);
-//                        }
-//                    }
-//                }
-//                if (strIndex == -1 || strIndex2 == -1){
-//                    strIndex2 = temp.length()-1;
-//                } else {
-//                    i = strIndex2;
-//                }
-//                    System.out.println(strIndex2);
-//                    System.out.println(i);
-//                temp = result.substring(strIndex2);
-//            }
-//        }
-//        fr.close();    //closes the stream and release the resources
-
-
         return result;
     }
-
 }
